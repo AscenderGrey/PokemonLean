@@ -1,0 +1,20 @@
+/* Brand tokens, taken from the prototype and the production landing page. */
+:root{
+  --bg:#0b1631; --surface:#12224f; --fg:#f3f1ea; --muted:#a3b3d8; --line:#27397a;
+  --accent:#5b9bff; --accent-fg:#06102a; --hl:#ffb62e; --hl-ink:#2b1c00; --soft:#1a2c63;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:"Instrument Sans","Segoe UI",system-ui,sans-serif;line-height:1.45}
+a{color:var(--accent)}
+main{max-width:920px;margin:0 auto;padding:48px 20px 80px}
+.eyebrow{margin:0 0 10px;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+h1{margin:0 0 14px;font-size:clamp(2rem,6vw,3.2rem);line-height:1.05;letter-spacing:-.01em}
+h1 i{font-style:normal;color:var(--hl)}
+.lede{max-width:46ch;color:var(--muted);font-size:1.06rem;margin:0 0 26px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.button{display:inline-block;background:var(--accent);color:var(--accent-fg);font-weight:800;text-decoration:none;border-radius:12px;padding:15px 22px}
+.button.quiet{background:transparent;color:var(--fg);border:2px solid var(--line)}
+.steps{display:flex;gap:18px;flex-wrap:wrap;margin-top:40px;color:var(--muted)}
+.steps b{color:var(--fg)}
+footer{margin-top:60px;color:var(--muted);font-size:.85rem}
