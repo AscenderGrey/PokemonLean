@@ -167,3 +167,86 @@ main h1 i{font-style:normal;color:var(--hl)}
   .ub[data-state="opening"] .ub-sparks,.ub[data-state="opening"] .ub-halo,.ub[data-state="opening"] .ub-copy,
   .ub[data-state="settled"] .ub-copy{animation:none!important;opacity:0;visibility:hidden}
 }
+
+/* ---------- the funnel stage: card column + question panel ---------- */
+.stage{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:32px;align-items:start;width:100%;max-width:920px}
+.cardcol{display:flex;flex-direction:column;align-items:center;gap:10px;position:sticky;top:12px}
+.fills{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#8fcaff}
+h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.sect{display:flex;flex-direction:column;gap:8px}
+
+/* the live card: the provided template with the answers landing in its slots */
+.p-card{position:relative;width:100%;max-width:340px;aspect-ratio:1744/2336;container-type:inline-size;
+  border-radius:3cqw;overflow:hidden;box-shadow:0 10px 30px rgba(6,12,40,.5)}
+.p-base{position:absolute;inset:0;width:100%;height:100%;display:block}
+.p-photo{position:absolute;left:4%;top:16.3%;width:89%;height:39%;object-fit:cover;
+  border-radius:1cqw;-webkit-mask-image:radial-gradient(ellipse 55% 58% at 50% 50%,#000 78%,transparent 100%);
+  mask-image:radial-gradient(ellipse 55% 58% at 50% 50%,#000 78%,transparent 100%)}
+.p-slot{position:absolute;color:#3f2a06;font-weight:700;line-height:1.15;overflow:hidden}
+.p-slot.empty{color:rgba(90,60,10,.5)}
+.p-slot.active{outline:.35cqw dashed rgba(59,130,246,.75);outline-offset:.2cqw;border-radius:1cqw}
+.p-slot .pop{display:inline-block;animation:pop .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{0%{transform:scale(.85);opacity:.25}100%{transform:none;opacity:1}}
+.p-top{right:10.5%;top:4.4%;font-size:2.7cqw;font-style:italic;text-align:right;max-width:76%;white-space:nowrap;text-overflow:ellipsis}
+.p-name{left:31%;top:10.6%;font-size:7cqw;font-weight:800;max-width:44%;white-space:nowrap;text-overflow:ellipsis}
+.p-lv{right:13.7%;top:10.9%;font-size:6.3cqw;font-weight:800}
+.p-cap{left:12%;right:12%;top:56.6%;font-size:3.55cqw;font-style:italic;text-align:center;white-space:nowrap;text-overflow:ellipsis}
+.p-sp{left:8.6%;right:8.6%;top:60.5%;font-size:2.6cqw;font-weight:500;line-height:1.3}
+.p-sp b{font-weight:800;color:#6b4a0a}
+.p-a1n{left:22%;right:30%;top:73.4%;font-size:3.8cqw;font-weight:800;text-align:center}
+.p-a1d{right:7.7%;top:73.2%;font-size:6.65cqw;font-weight:800}
+.p-a2n{left:22%;right:30%;top:78.2%;font-size:3.8cqw;font-weight:800;text-align:center}
+.p-a2n i{display:block;font-size:1.95cqw;font-weight:600;font-style:italic;margin-top:.4cqw}
+.p-a2d{right:7.7%;top:78.4%;font-size:6.65cqw;font-weight:800}
+.p-weak{left:2%;width:30%;top:92.8%;font-size:2.6cqw;font-weight:800;text-align:center}
+.p-res{left:34.5%;width:29%;top:92.8%;font-size:2.5cqw;font-weight:800;text-align:center}
+.p-str{left:63%;width:37%;top:93%;font-size:1.45cqw;font-weight:700;text-align:center}
+
+/* quiz option grid extras */
+.opt.own{grid-column:1/-1;border-style:dashed;justify-content:center;width:100%}
+.steps3{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.steps3 li{min-width:0;background:var(--soft);border-radius:12px;padding:9px;font-size:.85rem;line-height:1.25;display:flex;flex-direction:column;gap:2px}
+.steps3 b{font-size:.7rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.steps3 strong{font-weight:700}
+.steps3 span{color:var(--muted);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipb{font:inherit;font-size:.9rem;font-weight:700;color:var(--fg);background:var(--soft);border:2px solid var(--line);border-radius:99px;padding:7px 12px;cursor:pointer}
+
+/* ---------- paywall ---------- */
+.paywall{width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.rar{display:inline-block;background:var(--hl);color:var(--hl-ink);font-weight:700;font-size:.8rem;
+  letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:99px}
+.chat{background:var(--soft);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.chat .who{font-size:.78rem;font-weight:700;color:var(--muted);text-align:center}
+.bub{max-width:82%;padding:8px 12px;border-radius:16px;font-size:.95rem}
+.bub.me{align-self:flex-end;background:var(--accent);color:var(--accent-fg);border-bottom-right-radius:4px}
+.bub.them{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.link{font-weight:700}
+.bub.link small{display:block;font-weight:600;opacity:.85}
+.gets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.get{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.get b{font-size:1rem;line-height:1.2}
+.get .d{font-size:.85rem;color:var(--muted);line-height:1.3}
+.offers2{display:flex;flex-direction:column;gap:14px}
+.offer{font:inherit;color:var(--fg);background:var(--soft);border:2px solid var(--line);border-radius:14px;
+  padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:2px;position:relative}
+.offer b{font-family:var(--f-display);font-weight:400;font-size:1.15rem;line-height:1.2}
+.offer span{font-size:.85rem;color:var(--muted);font-weight:600}
+.offer.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.offer.fam{padding-top:16px}
+.offer .tagb{position:absolute;top:-11px;right:12px;background:var(--hl);color:var(--hl-ink);font-size:.72rem;
+  font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 10px;border-radius:99px}
+.total{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-weight:700;margin:0}
+.total b{font-family:var(--f-display);font-weight:400;font-size:1.7rem;color:var(--hl)}
+.stripe-box{width:100%}
+.stripe-mount{min-height:340px}
+.note.warn{color:var(--hl);background:rgba(255,182,46,.08);border:1px solid rgba(255,182,46,.35);
+  border-radius:12px;padding:10px 12px}
+
+@media (max-width:720px){
+  .stage{grid-template-columns:minmax(0,1fr);gap:16px}
+  .cardcol{position:static;order:-1}
+  .p-card{max-width:min(64vw,260px)}
+  .gets{grid-template-columns:minmax(0,1fr)}
+  .steps3{grid-template-columns:minmax(0,1fr)}
+}

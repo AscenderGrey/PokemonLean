@@ -1,52 +1,57 @@
 "use client";
 
 /**
- * /create — the whole buyer journey in one page: quiz → preparation → the pack → teaser checkout →
- * buyer confirmation. Generation is a single call to POST /api/generate; the pack shows a real
- * status while it runs. Payment is simulated and always labelled as such.
+ * /create — the funnel, ported from reference/SoMeCard_Quizprototyp.html: the live card column on
+ * the left, one question at a time beside it, every answer landing in a slot on the card. Steps are
+ * name → relation → photo → interest → the three quick rounds → signature power → quote → email,
+ * then generation, the sealed pack, the paywall (Stripe embedded checkout with a Swish button) and
+ * the buyer confirmation.
  */
 import {useCallback, useState} from "react";
 import Link from "next/link";
 import Unboxing from "@/components/Unboxing";
-import {RELATIONS, TEMPLATE_KEY, FIRE, PAIRS, POWER, PRICE} from "@/lib/quiz-data";
+import CardPreview, {type CardState} from "@/components/CardPreview";
+import StripeCheckout from "@/components/StripeCheckout";
+import {RELATIONS, relation, FIRE, PAIRS, WEAK, POWER, QUOTE_EXAMPLES, PRICE, FAMILY_PRICE, FAMILY_EXTRA} from "@/lib/quiz-data";
 
-type Pair = {name: string} | null;
+type PairResult = {name: string; desc?: string} | null;
 type Option = {key: string; label: string; emoji: string};
-type State = {
-  name: string;
-  rel: string;
-  photo: string;
-  fire: Option & {name?: string} | null;
-  pairs: [Pair, Pair, Pair];
-  power: Option | null;
-  quote: string;
+type S = {
+  name: string; rel: string; photo: string;
+  fire: (typeof FIRE)[number] | null;
+  pairs: [PairResult, PairResult, PairResult];
+  power: (typeof POWER)[number] | null;
+  quote: string; email: string; offer: 1 | 5;
 };
-const EMPTY: State = {name: "", rel: "", photo: "", fire: null, pairs: [null, null, null], power: null, quote: ""};
-const QSTEPS = ["name", "rel", "photo", "fire", "pairs", "power", "quote"] as const;
-const kr = (n: number) => `${n} kr`;
+
+const EMPTY: S = {name: "", rel: "", photo: "", fire: null, pairs: [null, null, null], power: null, quote: "", email: "", offer: 1};
+const STEPS = ["name", "rel", "photo", "fire", "pairs", "power", "quote", "email"] as const;
+type Step = (typeof STEPS)[number];
+
 const gen = (n: string) => (!n || /[sxz]$/i.test(n) ? n : n + "s");
+const kr = (n: number) => `${n} kr`;
 
 export default function Create() {
-  const [phase, setPhase] = useState<"quiz" | "prep" | "pack" | "buyer">("quiz");
+  const [phase, setPhase] = useState<"quiz" | "load" | "pack" | "mine">("quiz");
   const [qi, setQi] = useState(0);
   const [pairI, setPairI] = useState(0);
-  const [s, setS] = useState<State>(EMPTY);
+  const [s, setS] = useState<S>(EMPTY);
   const [img, setImg] = useState<{card: string; teaser: string} | null>(null);
   const [settled, setSettled] = useState(false);
   const [err, setErr] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [status, setStatus] = useState("");
+  const [started, setStarted] = useState(false);
 
-  const set = <K extends keyof State>(k: K, v: State[K]) => setS(p => ({...p, [k]: v}));
-  const step = QSTEPS[qi];
-  const giftUrl = `${typeof location === "undefined" ? "" : location.origin}/gift/sample`;
-  const who = s.name || "personen";
+  const set = <K extends keyof S>(k: K, v: S[K]) => setS(p => ({...p, [k]: v}));
+  const step: Step = STEPS[qi];
+  const nm = s.name.trim() || "personen";
+  const who = s.name.trim() || "personen";
 
-  const generate = useCallback(async (state: State) => {
-    setErr("");
-    setPhase("prep");
+  const generate = useCallback(async (state: S) => {
+    setErr(""); setPhase("load"); setStatus("Skickar dina svar…");
     const answers = {
       name: state.name.trim(),
-      relationship: TEMPLATE_KEY[state.rel],
+      relationship: relation(state.rel)?.template ?? "van",
       interests: [state.fire?.name ?? "Okänt"],
       traits: [state.pairs[0]?.name ?? "Okänt", state.power?.label ?? "Okänt"],
       privateFact: state.pairs[1]?.name ?? "Okänt",
@@ -54,10 +59,12 @@ export default function Create() {
     };
     const photoBase64 = state.photo ? state.photo.split(",")[1] : undefined;
     try {
+      setStatus("Skriver kortets text…");
       const r = await fetch("/api/generate", {
         method: "POST", headers: {"content-type": "application/json"},
         body: JSON.stringify({answers, photoBase64})
       });
+      setStatus("Ritar kortet…");
       const data = await r.json();
       if (!r.ok) throw new Error(data?.error ?? "Kortet kunde inte skapas");
       setImg({card: `data:image/png;base64,${data.card}`, teaser: `data:image/png;base64,${data.teaser}`});
@@ -70,42 +77,46 @@ export default function Create() {
 
   const advance = () => {
     if (step === "pairs" && pairI < 2) return setPairI(pairI + 1);
-    if (qi < QSTEPS.length - 1) { setQi(qi + 1); setPairI(0); return; }
+    if (qi < STEPS.length - 1) { setQi(qi + 1); setPairI(0); return; }
     generate(s);
   };
-  const pick = () => setTimeout(advance, 180); // let the picked option show its selected state
+  const pick = () => setTimeout(advance, 160);
   const back = () => {
     if (step === "pairs" && pairI > 0) return setPairI(pairI - 1);
-    if (qi > 0) { const p = qi - 1; setQi(p); setPairI(QSTEPS[p] === "pairs" ? 2 : 0); }
+    if (qi > 0) { const p = qi - 1; setQi(p); setPairI(STEPS[p] === "pairs" ? 2 : 0); }
   };
 
-  const share = async () => {
-    try {
-      if (navigator.share) await navigator.share({title: "Ett pack till dig", text: `Ett pack till ${s.name}.`, url: giftUrl});
-      else { await navigator.clipboard.writeText(giftUrl); setCopied(true); }
-    } catch { /* user cancelled — the page stays usable */ }
+  const card: CardState = {
+    name: s.name, rel: s.rel, photo: s.photo, level: 0, levelSet: false, quote: s.quote,
+    fire: s.fire, attack2: s.pairs[0] ? {name: s.pairs[0].name, desc: s.pairs[0].desc ?? ""} : null,
+    weakness: s.pairs[1]?.name ?? "", resistance: s.pairs[2]?.name ?? "", power: s.power, active: []
   };
+  const showCard = phase === "quiz";
 
   return (
     <main className="flow">
       <header className="bar">
         <Link className="brand" href="/">So<em>Me</em>Card</Link>
         {phase === "quiz" && qi > 0 && <button className="back" type="button" onClick={back}>← Tillbaka</button>}
+        {phase === "mine" && <button className="back" type="button" onClick={() => { setS(EMPTY); setQi(0); setPairI(0); setImg(null); setPhase("quiz"); }}>Börja om</button>}
       </header>
 
       {phase === "quiz" && (
-        <section className="panel">
-          <div className="prog">
-            <div className="segs">{[0, 1, 2, 3, 4, 5, 6].map(i => <i key={i} className={i <= qi ? "on" : ""} />)}</div>
-            <span className="n">{qi + 1} av 7</span>
-          </div>
-          <QuizStep s={s} set={set} step={step} pairI={pairI} advance={advance} pick={pick} />
-        </section>
+        <div className="stage">
+          <div className="cardcol">{showCard && <CardPreview s={card} />}</div>
+          <section className="panel">
+            <div className="prog">
+              <div className="segs">{[0, 1, 2, 3, 4, 5, 6, 7].map(i => <i key={i} className={i <= qi ? "on" : ""} />)}</div>
+              <span className="n">{qi + 1} av 8</span>
+            </div>
+            <QuizStep s={s} set={set} step={step} pairI={pairI} advance={advance} pick={pick} nm={nm} />
+          </section>
+        </div>
       )}
 
-      {phase === "prep" && (
+      {phase === "load" && (
         <section className="panel">
-          <h1>{gen(s.name)} kort görs</h1>
+          <h1>{gen(s.name)} kort byggs</h1>
           {err ? (
             <>
               <p className="sub">Kortet kunde inte skapas: {err}</p>
@@ -115,8 +126,8 @@ export default function Create() {
               </div>
             </>
           ) : (
-            <div className="load"><div className="track"><i /></div>
-              <p className="sub">Vi skriver kortets text och ritar kortet. Det tar oftast under en minut.</p></div>
+            <div className="load"><div className="track"><i /></div><p className="sub">{status}</p>
+              <p className="note">Kortet ritas nu. Vi visar bara det som faktiskt är klart.</p></div>
           )}
         </section>
       )}
@@ -125,36 +136,93 @@ export default function Create() {
         <section className="reveal">
           <Unboxing key="reveal" mode="teaser" image={img.teaser} name={who}
             sub="Jag har gjort en grej till dig." cta="Tryck för att öppna." onSettled={() => setSettled(true)} />
-          {settled && (
-            <div className="checkout">
-              <h1>Det där är ju {s.name}.</h1>
-              <p className="sub">Lås upp hela kortet och skicka ett pack att öppna.</p>
-              <p className="price">{kr(PRICE)}</p>
-              <button className="btn big" type="button" onClick={() => setPhase("buyer")}>Testa köp · {kr(PRICE)}</button>
-              <p className="note">Simulerat köp i demon. Ingen riktig Swish- eller Apple Pay-betalning sker.</p>
-            </div>
-          )}
+          {settled && <Paywall s={s} set={set} who={who} started={started} onStart={() => setStarted(true)} onPaid={() => setPhase("mine")} />}
         </section>
       )}
 
-      {phase === "buyer" && (
+      {phase === "mine" && (
         <section className="panel">
+          <div className="fills">Efter köp · det här ser köparen</div>
           <h1>Klart. Nu är det {gen(s.name)} tur.</h1>
           <p className="sub">Packet är förseglat och väntar. Skicka det när du vill.</p>
           {img && <div className="mini"><img src={img.teaser} alt="" /></div>}
           <div className="row">
-            <button className="btn big" type="button" onClick={share}>Skicka packet</button>
+            <button className="btn big" type="button" onClick={async () => {
+              const url = `${location.origin}/gift/sample`;
+              try {
+                if (navigator.share) await navigator.share({title: "Ett pack till dig", text: `Ett pack till ${s.name}.`, url});
+                else { await navigator.clipboard.writeText(url); alert("Länken är kopierad."); }
+              } catch { /* cancelled */ }
+            }}>Skicka packet</button>
             <Link className="btn ghost" href="/gift/sample">Förhandsvisa mottagarens upplevelse</Link>
           </div>
-          {copied && <p className="note">Länken är kopierad. Klistra in den där du vill skicka den.</p>}
-          <p className="note">Delas som en exempellänk i demon: {giftUrl}</p>
+          <p className="note">Exempellänk i demon: {typeof location === "undefined" ? "" : location.origin}/gift/sample</p>
         </section>
       )}
     </main>
   );
 }
 
-/** The shared grid of emoji + label choices used by the relation, interest and power steps. */
+/** The paywall: teaser copy, what you get, the pack offers, then embedded Stripe Checkout. */
+function Paywall({s, set, who, started, onStart, onPaid}: {
+  s: S; set: <K extends keyof S>(k: K, v: S[K]) => void; who: string;
+  started: boolean; onStart: () => void; onPaid: () => void;
+}) {
+  const price = s.offer === 5 ? FAMILY_PRICE : PRICE;
+  return (
+    <div className="paywall">
+      <span className="rar">Sällsynthet: Ultra Rare</span>
+      <h1>Lås upp {gen(s.name)} kort</h1>
+      <p className="sub">Det du ser är bara toppen av kortet. Resten ligger kvar i packet.</p>
+
+      <div className="sect">
+        <h2>Så här blir det när du skickar det</h2>
+        <div className="chat">
+          <div className="who">{who}</div>
+          <div className="bub me">Jag har gjort en grej till dig 👀</div>
+          <div className="bub me link">📦 {gen(s.name)} pack <small>Tryck för att riva upp</small></div>
+          <div className="bub them">VA 😂 det här är ju JAG</div>
+        </div>
+      </div>
+
+      <div className="sect">
+        <h2>Det här får du</h2>
+        <div className="gets">
+          <div className="get"><b>Hela kortet</b><span className="d">Du ser allt på kortet, inte bara toppen.</span></div>
+          <div className="get"><b>Packet att riva upp</b><span className="d">{who} får en länk och river upp packet i mobilen.</span></div>
+          <div className="get"><b>Skriv ut hemma</b><span className="d">Skriv ut, klipp ut, klart.</span></div>
+          <div className="get"><b>Skicka i chatten</b><span className="d">En bild på kortet att skicka vidare.</span></div>
+        </div>
+      </div>
+
+      <div className="sect">
+        <h2>Välj pack</h2>
+        <div className="offers2">
+          <button type="button" className={`offer fam${s.offer === 5 ? " sel" : ""}`} onClick={() => set("offer", 5)}>
+            <span className="tagb">Bäst värde</span>
+            <b>Familjepacket · {kr(FAMILY_PRICE)}</b><span>5 kort, ca 50 kr styck</span>
+          </button>
+          <button type="button" className={`offer${s.offer === 1 ? " sel" : ""}`} onClick={() => set("offer", 1)}>
+            <b>Bara {gen(s.name)} kort · {kr(PRICE)}</b><span>1 kort</span>
+          </button>
+        </div>
+      </div>
+
+      <p className="total"><span>Att betala</span><b>{kr(price)}</b></p>
+      {!started ? (
+        <button className="btn big" type="button" onClick={onStart}>Betala med Swish · {kr(price)}</button>
+      ) : (
+        <StripeCheckout pack={s.offer === 5 ? "family" : "single"} />
+      )}
+      <p className="note">Betalningen sker i Stripe. Swish visas för svenska köpare när det är aktiverat på kontot.</p>
+      <div className="row">
+        <button className="btn ghost" type="button" onClick={onPaid}>Visa efter köp: köparen (demo)</button>
+      </div>
+    </div>
+  );
+}
+
+/** The shared grid of emoji + label choices. */
 function Choices({items, selected, onPick}: {items: readonly Option[]; selected?: string; onPick: (k: string) => void}) {
   return (
     <div className="opts">{items.map(o => (
@@ -165,37 +233,58 @@ function Choices({items, selected, onPick}: {items: readonly Option[]; selected?
   );
 }
 
-/** One quiz step. Each answer advances promptly; nothing over-animated. */
-function QuizStep({s, set, step, pairI, advance, pick}: {
-  s: State;
-  set: <K extends keyof State>(k: K, v: State[K]) => void;
-  step: (typeof QSTEPS)[number];
-  pairI: number;
-  advance: () => void;
-  pick: () => void;
+/** The own-text escape hatch the prototype offers next to every preset list. */
+function OwnText({label, placeholder, max, onDone}: {label: string; placeholder: string; max: number; onDone: (v: string) => void}) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState("");
+  return (
+    <>
+      <button className="opt own" type="button" onClick={() => setOpen(o => !o)}>✏️ {label}</button>
+      {open && (
+        <form className="field" onSubmit={e => { e.preventDefault(); if (v.trim()) onDone(v.trim()); }}>
+          <input autoFocus maxLength={max} placeholder={placeholder} value={v} onChange={e => setV(e.target.value)} />
+          <button className="btn" type="submit" disabled={!v.trim()}>Klar</button>
+        </form>
+      )}
+    </>
+  );
+}
+
+function QuizStep({s, set, step, pairI, advance, pick, nm}: {
+  s: S; set: <K extends keyof S>(k: K, v: S[K]) => void; step: Step; pairI: number;
+  advance: () => void; pick: () => void; nm: string;
 }) {
-  const nm = s.name || "personen";
+  const g = gen(nm);
+
   if (step === "name") return (
     <>
       <h1>Vem ska få ett kort?</h1>
-      <p className="sub">Skriv namnet så dyker det upp på packet.</p>
+      <p className="sub">Skriv namnet så dyker det upp på kortet direkt.</p>
       <form className="field" onSubmit={e => { e.preventDefault(); if (s.name.trim()) advance(); }}>
         <input autoFocus maxLength={18} placeholder="T.ex. Anna" value={s.name} onChange={e => set("name", e.target.value)} />
         <button className="btn" type="submit" disabled={!s.name.trim()}>Nästa</button>
       </form>
+      <ol className="steps3">
+        <li><b>Steg 1</b><strong>Gör ett utkast</strong><span>Gratis</span></li>
+        <li><b>Steg 2</b><strong>Kika på kortet</strong><span>Gratis</span></li>
+        <li><b>Steg 3</b><strong>Lås upp och skicka</strong><span>{kr(PRICE)}</span></li>
+      </ol>
     </>
   );
+
   if (step === "rel") return (
     <>
       <h1>Vem är {nm} för dig?</h1>
       <p className="sub">Svaret bestämmer kortets typ och färg.</p>
-      <Choices items={RELATIONS} selected={s.rel} onPick={k => { set("rel", k); pick(); }} />
+      <Choices items={RELATIONS.map(r => ({key: r.key, label: r.label, emoji: r.emoji}))} selected={s.rel}
+        onPick={k => { set("rel", k); pick(); }} />
     </>
   );
+
   if (step === "photo") return (
     <>
       <h1>Har du en bild på {nm}?</h1>
-      <p className="sub">Bilden hamnar i holo-ramen. Frivilligt.</p>
+      <p className="sub">Bilden hamnar i holo-ramen. Frivilligt — du kan lägga till den senare.</p>
       <div className="upload"><input type="file" accept="image/*" onChange={e => {
         const f = e.target.files?.[0]; if (!f) return;
         const rd = new FileReader();
@@ -205,45 +294,76 @@ function QuizStep({s, set, step, pairI, advance, pick}: {
       <div className="row"><button className="btn ghost" type="button" onClick={advance}>Hoppa över så länge</button></div>
     </>
   );
+
   if (step === "fire") return (
     <>
       <h1>Vad går {nm} igång på?</h1>
       <p className="sub">Det blir första attacken.</p>
-      <Choices items={FIRE} selected={s.fire?.key}
-        onPick={k => { set("fire", FIRE.find(o => o.key === k) ?? null); pick(); }} />
+      <Choices items={FIRE} selected={s.fire?.key} onPick={k => { set("fire", FIRE.find(o => o.key === k) ?? null); pick(); }} />
+      <OwnText label="Skriv eget" placeholder="T.ex. Padel" max={22}
+        onDone={v => { set("fire", {key: "_own", label: v, emoji: "✏️", name: v, r: "+50 " + v + ". Den känner alla igen."}); pick(); }} />
     </>
   );
+
   if (step === "pairs") {
     const P = PAIRS[pairI];
-    const q = P.q.replace("{n}", nm).replace("{g}", gen(nm));
+    const dynamic = pairI === 1 && s.fire && WEAK[s.fire.key];
+    const options = dynamic
+      ? WEAK[s.fire!.key].map(t => ({label: t, name: t}))
+      : P.options;
+    const q = P.q.replace("{n}", nm).replace("{g}", g);
+    const setPair = (r: PairResult) => { const p: [PairResult, PairResult, PairResult] = [...s.pairs]; p[pairI] = r; set("pairs", p); pick(); };
     return (
       <>
         <h1>{q}</h1>
-        <p className="sub">Snabbrunda {pairI + 1} av 3.</p>
-        <div className="vs">{P.options.map((o, i) => (
+        <p className="sub">Snabbrunda {pairI + 1} av 3.{dynamic ? ` Förslagen bygger på ${s.fire!.name}.` : ""}</p>
+        <div className="vs">{options.map((o, i) => (
           <button key={i} className={`opt${s.pairs[pairI]?.name === o.name ? " sel" : ""}`} type="button"
-            onClick={() => { const p: [Pair, Pair, Pair] = [...s.pairs]; p[pairI] = {name: o.name}; set("pairs", p); pick(); }}>{o.label}</button>
+            onClick={() => setPair({name: o.name, desc: "name" in o && (o as any).desc})}>{o.label}</button>
         ))}</div>
+        <OwnText label={P.ownLabel} placeholder={P.ownPlaceholder} max={P.ownMax}
+          onDone={v => setPair({name: v, desc: pairI === 0 ? "Händer varje gång. Motståndaren hinner aldrig reagera." : undefined})} />
       </>
     );
   }
+
   if (step === "power") return (
     <>
-      <h1>Vilken är {gen(s.name)} signaturkraft?</h1>
+      <h1>Vilken är {g} signaturkraft?</h1>
       <p className="sub">Den blir special power och strength.</p>
-      <Choices items={POWER} selected={s.power?.key}
-        onPick={k => { set("power", POWER.find(o => o.key === k) ?? null); pick(); }} />
+      <Choices items={POWER} selected={s.power?.key} onPick={k => { set("power", POWER.find(o => o.key === k) ?? null); pick(); }} />
+      <OwnText label="Skriv egen kraft" placeholder="T.ex. Hittar alltid en parkeringsplats" max={60}
+        onDone={v => { set("power", {key: "_own", label: v, emoji: "✏️", sp: v.replace(/[.!]+$/, "") + ". Ingen vet hur, men det händer varje gång.", st: "Oslagbar på hemmaplan"}); pick(); }} />
     </>
   );
-  return (
+
+  if (step === "quote") return (
     <>
-      <h1>Vad säger {s.name} alltid?</h1>
+      <h1>Vad säger {nm} alltid?</h1>
       <p className="sub">Frivilligt. En mening som bara ni känner igen.</p>
       <form className="field" onSubmit={e => { e.preventDefault(); advance(); }}>
         <input maxLength={40} placeholder="Skriv med egna ord" value={s.quote} onChange={e => set("quote", e.target.value)} />
-        <button className="btn" type="submit">Skapa {gen(s.name)} kort</button>
+        <button className="btn" type="submit">Lägg till</button>
       </form>
+      <div className="sect"><h2>Eller tryck på ett exempel</h2>
+        <div className="chips">{QUOTE_EXAMPLES.map(t => (
+          <button key={t} className="chipb" type="button" onClick={() => set("quote", t)}>{t}</button>
+        ))}</div>
+      </div>
       <div className="row"><button className="btn ghost" type="button" onClick={() => { set("quote", ""); advance(); }}>Hoppa över</button></div>
+    </>
+  );
+
+  return (
+    <>
+      <h1>Vart ska vi skicka {g} kort?</h1>
+      <p className="sub">Vi mejlar länken så att du hittar tillbaka. Frivilligt.</p>
+      <form className="field" onSubmit={e => { e.preventDefault(); advance(); }}>
+        <input type="email" placeholder="din@mejl.se" value={s.email} onChange={e => set("email", e.target.value)} />
+        <button className="btn" type="submit">Skapa kortet</button>
+      </form>
+      <div className="row"><button className="btn ghost" type="button" onClick={() => { set("email", ""); advance(); }}>Hoppa över</button></div>
+      <p className="note">Förhandsvisningen är gratis. Hela kortet kostar {kr(PRICE)}, och du betalar först om du vill låsa upp det.</p>
     </>
   );
 }

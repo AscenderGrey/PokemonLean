@@ -44,11 +44,16 @@ curl -s localhost:3000/api/generate -H 'content-type: application/json' \
 Vercel project `leanpokemon` (team `erpa-utopilot`), linked to this repo, branch `main` —
 production: https://leanpokemon.vercel.app.
 
-Required environment variable (server-only, production + preview):
+Required environment variables (production + preview):
 
 | Name | Why |
 |---|---|
 | `OPENAI_API_KEY` | `lib/image-gen.ts` calls the OpenAI text and image models |
+| `STRIPE_SECRET_KEY` | server-only; creates the embedded Checkout Session in `app/api/checkout` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | browser-safe; Stripe.js mounts the embedded checkout |
+
+Swish is requested first in the session; if the account has not activated it, the session is retried
+card-only. Without the Stripe keys the checkout reports *not configured* and never fakes a payment.
 
 Two constraints to keep in mind:
 
