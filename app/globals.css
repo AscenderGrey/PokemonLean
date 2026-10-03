@@ -250,8 +250,3 @@ h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercas
   .gets{grid-template-columns:minmax(0,1fr)}
   .steps3{grid-template-columns:minmax(0,1fr)}
 }
-
-/* The reveal is a light-canvas experience (its own stylesheet assumes #fffdf5 / #12255f).
-   This wrapper gives it that canvas inside the dark app without touching the reveal module. */
-.reveal-canvas{min-height:100dvh;background:#fffdf5;color:#12255f}
-.reveal-canvas .row{padding:14px 20px 0;justify-content:center}
