@@ -244,9 +244,41 @@ h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercas
   border-radius:12px;padding:10px 12px}
 
 @media (max-width:720px){
-  .stage{grid-template-columns:minmax(0,1fr);gap:16px}
+  .stage{grid-template-columns:minmax(0,1fr);gap:12px}
   .cardcol{position:static;order:-1}
-  .p-card{max-width:min(64vw,260px)}
+  .p-card{max-width:min(56vw,206px)}
   .gets{grid-template-columns:minmax(0,1fr)}
   .steps3{grid-template-columns:minmax(0,1fr)}
+  .rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* ---------- landing ---------- */
+.landing{max-width:none;display:flex;flex-direction:column;gap:34px;align-items:center;padding:18px 16px 64px}
+.landing .bar,.landing .hero,.landing .sect,.landing .final{width:100%;max-width:1000px}
+.landing .bar{align-items:center}
+.hero{display:flex;flex-direction:column;gap:14px;padding-top:26px}
+.kicker{margin:0;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hero h1{margin:0;font-size:clamp(2rem,6.4vw,3.4rem);line-height:1.06;letter-spacing:-.01em}
+.lede{max-width:52ch;margin:0;color:var(--muted);font-size:1.06rem}
+.lede2{margin:0;font-size:clamp(1.15rem,3.4vw,1.6rem);font-weight:800;text-transform:none;letter-spacing:0;color:var(--fg)}
+.landing h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:0}
+.rail{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px}
+.railItem{display:grid;gap:8px;text-align:center;color:var(--muted);font-weight:700;font-size:.82rem;text-decoration:none}
+.railItem img{display:block;width:100%;height:auto;aspect-ratio:1744/2336;object-fit:cover;border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 6px 14px rgba(6,12,40,.45)}
+.railItem:hover img{border-color:var(--hl)}
+.faq details{border-bottom:1px solid var(--line);padding:14px 0}
+.faq summary{cursor:pointer;font-weight:700}
+.faq p{margin:10px 0 0;color:var(--muted)}
+.final{display:flex;flex-direction:column;gap:16px;align-items:flex-start;border-top:1px solid var(--line);padding-top:34px}
+.final h2{margin:0;font-size:clamp(1.5rem,4.6vw,2.4rem);text-transform:none;letter-spacing:-.01em;color:var(--fg)}
+
+/* Must come after the base rules: later rules win at equal specificity. */
+@media (max-width:720px){
+  .rail{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .railItem img{border-radius:12px}
+}
+
+@media (max-width:720px){
+  .flow{gap:12px;padding-top:12px}
+  .panel{padding:16px}
 }
