@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 import {cardText, cardImage, cardTeaser} from '@/lib/image-gen';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const maxDuration = 60;
 
 /**
  * The whole image path in one call: answers (+ optional photo) in, the card's text and two PNGs out.

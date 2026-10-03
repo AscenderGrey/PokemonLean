@@ -1,0 +1,4 @@
+# Nothing reads the full-size source templates at runtime — only public/templates/ref/** is used by
+# the generation function. Keep them out of the upload to stay well inside the deployment size limit.
+public/templates/*.png
+reference/
