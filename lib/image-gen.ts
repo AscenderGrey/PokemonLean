@@ -35,8 +35,8 @@ export interface CardText {name:string; level:number; top_line:string; caption:s
   weakness:string; resistance:string; strength:string; rarity:'Rare'|'Epic'|'Legendary'|'Ultra Rare';}
 
 const TEXT_MODEL = process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini';
-const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1-mini';
-const IMAGE_QUALITY = process.env.OPENAI_IMAGE_QUALITY || 'medium';
+const IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1.5';
+const IMAGE_QUALITY = process.env.OPENAI_IMAGE_QUALITY || 'high';
 const CARD_WIDTH = 1744, CARD_HEIGHT = 2336;
 
 const textPrompt = (a:Answers) => `You write the text for a personalised trading card that someone is giving to a person they love. It is an affectionate roast: it should make the recipient laugh and say "that is so me". Answer with JSON only.
