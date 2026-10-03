@@ -33,6 +33,41 @@ curl -s localhost:3000/api/generate -H 'content-type: application/json' \
   | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);require('fs').writeFileSync('/tmp/card.png',Buffer.from(j.card,'base64'));console.log(j.text)})"
 ```
 
+## Routes
+- `/create` — the buyer journey: quiz → generation → sealed pack → teaser checkout (99 kr, simulated) → buyer confirmation
+- `/gift/[token]` — the recipient: a sealed pack, the full reveal, save / replay (demo token: `/gift/sample`)
+- `/demo` — the deterministic sample showcase; `/demo?capture=1` is the chrome-free 1080×1920 ad capture
+- `/api/generate` — `POST {answers, photoBase64?}` → `{text, card, teaser}` (base64 PNGs)
+
+## Deploy
+
+Vercel project `leanpokemon` (team `erpa-utopilot`), linked to this repo, branch `main` —
+production: https://leanpokemon.vercel.app.
+
+Required environment variable (server-only, production + preview):
+
+| Name | Why |
+|---|---|
+| `OPENAI_API_KEY` | `lib/image-gen.ts` calls the OpenAI text and image models |
+
+Two constraints to keep in mind:
+
+- The plan is Hobby, so the generation route's `maxDuration` must stay ≤ 60 s.
+- `lib/image-gen.ts` reads `public/templates/ref/<relation>.png` from disk at runtime with a
+  dynamic path, so the bundler cannot trace it. `next.config.ts` ships those files with the
+  function via `outputFileTracingIncludes`; without that the route fails with `ENOENT` on Vercel.
+  `.vercelignore` drops the unused full-size templates from the upload.
+
+## Reproducing the sample card
+
+`/demo` and `/gift` show a stored sample rather than generating one per visit. Regenerate it with:
+
+```bash
+node scripts/make-sample.mjs   # public/sample/basta_van.png + -teaser.png
+```
+
+The text is composited in code, not generated: the image model reliably garbles Swedish text.
+
 ## Rules that keep it lean
 - One page, ≤ 500 lines of app code. Over budget means cut a feature, not add a file.
 - No CSS framework, no animation library. Transforms, opacity, keyframes, `requestAnimationFrame`.
