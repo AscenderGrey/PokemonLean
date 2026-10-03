@@ -3,11 +3,14 @@
 /**
  * /reveal/preview — watch the epic reveal without going through checkout.
  * /reveal/preview?audience=recipient (default) or ?audience=owner.
- * Pure presentation: the data is a fixture, nothing is fetched, nothing is charged.
+ *
+ * The reveal is a light-canvas experience: it is wrapped exactly as the production route wraps it
+ * (.screen / .head / .sender from the reveal stylesheet) inside a light canvas, otherwise the whole
+ * light-themed design renders on the app's dark background and looks wrong.
  */
 import {useEffect, useState} from "react";
-import Link from "next/link";
 import {EpicReveal, type EpicRevealData} from "@/components/epic-reveal";
+import styles from "@/components/gift-reveal.module.css";
 
 const DATA: EpicRevealData = {
   name: "Anna",
@@ -24,7 +27,7 @@ const DATA: EpicRevealData = {
   ],
   heroUrl: "/sample/basta_van.png",
   partialUrl: "/sample/basta_van-teaser.png",
-  cardTitle: "Bästa vän. Känner halva stan.",
+  cardTitle: "Bästa vän. Känner hela stan.",
   paid: false,
   priceSEK: 99,
   senderName: "John",
@@ -45,24 +48,26 @@ export default function RevealPreview() {
   const pick = (a: "recipient" | "owner") => { setAudience(a); setPaid(false); setKey(k => k + 1); };
 
   return (
-    <main className="flow">
-      <header className="bar">
-        <Link className="brand" href="/">So<em>Me</em>Card</Link>
-        <span className="n">Förhandsvisning · reveal</span>
-      </header>
-      <div className="row">
-        <button className={`btn${audience === "recipient" ? " big" : " ghost"}`} type="button" onClick={() => pick("recipient")}>Mottagaren</button>
-        <button className={`btn${audience === "owner" ? " big" : " ghost"}`} type="button" onClick={() => pick("owner")}>Köparen</button>
-        <button className="btn ghost" type="button" onClick={() => setKey(k => k + 1)}>Spela upp igen</button>
-      </div>
-      <EpicReveal
-        key={`${audience}-${paid}-${key}`}
-        data={{...DATA, paid}}
-        audience={audience}
-        consentRequired={false}
-        onUnlock={() => setPaid(true)}
-        onProgress={() => {}}
-      />
-    </main>
+    <div className="reveal-canvas">
+      <main className={styles.screen}>
+        <div className={styles.head}><span>That’s So Me!</span><span>{DATA.name}</span></div>
+        {audience === "recipient" && (
+          <p className={styles.sender}>Från {DATA.senderName} — “{DATA.greeting}”</p>
+        )}
+        <div className="row">
+          <button className={`btn${audience === "recipient" ? " big" : " ghost"}`} type="button" onClick={() => pick("recipient")}>Mottagaren</button>
+          <button className={`btn${audience === "owner" ? " big" : " ghost"}`} type="button" onClick={() => pick("owner")}>Köparen</button>
+          <button className="btn ghost" type="button" onClick={() => setKey(k => k + 1)}>Spela upp igen</button>
+        </div>
+        <EpicReveal
+          key={`${audience}-${paid}-${key}`}
+          data={{...DATA, paid}}
+          audience={audience}
+          consentRequired={false}
+          onUnlock={() => setPaid(true)}
+          onProgress={() => {}}
+        />
+      </main>
+    </div>
   );
 }
