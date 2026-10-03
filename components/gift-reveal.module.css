@@ -19,7 +19,7 @@
 .cinema::before{content:"";position:absolute;inset:0;background:radial-gradient(58% 38% at 50% 82%,#ffc43c38,transparent 72%);pointer-events:none;animation:glowPulse 4.5s ease-in-out infinite}
 .cinema::after{content:"";position:absolute;inset:0;background:radial-gradient(140% 100% at 50% 50%,transparent 52%,#000000a6);pointer-events:none}
 .cinemaKicker{position:relative;z-index:1;margin:0;color:#ffd43b;font-size:13px;font-weight:800;letter-spacing:.22em;text-transform:uppercase}
-.cinemaTitle{position:relative;z-index:1;margin:0;font-family:'Fredoka','Nunito Sans',sans-serif;font-size:clamp(1.9rem,8vw,3rem);line-height:1.1;letter-spacing:-.02em;text-wrap:balance;text-shadow:0 2px 24px #00000080}
+.cinemaTitle{position:relative;z-index:1;margin:0;font-family:'Fredoka','Nunito Sans',sans-serif;font-size:clamp(1.9rem,8vw,3rem);line-height:1.1;letter-spacing:-.02em;text-transform:none;text-wrap:balance;text-shadow:0 2px 24px #00000080}
 .cinemaBody{position:relative;z-index:1;margin:0;max-width:30ch;color:#c9d3ee;font-size:17px;line-height:1.5}
 .cinema :global(.button){position:relative;z-index:1;margin-top:8px;background:#ffd43b;color:#12255f;border:3px solid #12255f;box-shadow:0 7px 0 #12255f}
 .cinema :global(.button):hover{background:#ffe27a}
