@@ -7,7 +7,7 @@
  * then generation, the sealed pack, the paywall (Stripe embedded checkout with a Swish button) and
  * the buyer confirmation.
  */
-import {useCallback, useState} from "react";
+import {useCallback, useEffect, useState, type FormEvent} from "react";
 import Link from "next/link";
 import Unboxing from "@/components/Unboxing";
 import CardPreview, {type CardState} from "@/components/CardPreview";
@@ -41,6 +41,45 @@ export default function Create() {
   const [err, setErr] = useState("");
   const [status, setStatus] = useState("");
   const [started, setStarted] = useState(false);
+  const [giftLink, setGiftLink] = useState("");
+  const [to, setTo] = useState("");
+  const [myName, setMyName] = useState("");
+  const [sent, setSent] = useState("");
+  const [sending, setSending] = useState(false);
+
+  // Past payment, save the card so the recipient's link exists and can be reopened any time.
+  useEffect(() => {
+    if (phase !== "mine" || !img || giftLink) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/gift", {
+          method: "POST", headers: {"content-type": "application/json"},
+          body: JSON.stringify({op: "save", recipient: s.name.trim() || "personen", sender: myName.trim(), greeting: "",
+            cardText: JSON.stringify({}), cardPng: img.card.split(",")[1] ?? ""})
+        });
+        const d = await r.json();
+        if (!cancelled) setGiftLink(r.ok && d.url ? d.url : "");
+        if (!cancelled && !r.ok) setSent(d.message || "Kunde inte spara kortet.");
+      } catch { /* the buyer can still retry by reloading */ }
+    })();
+    return () => { cancelled = true; };
+  }, [phase, img, giftLink, myName, s.name]);
+
+  const send = async (e: FormEvent) => {
+    e.preventDefault();
+    setSending(true); setSent("");
+    try {
+      const r = await fetch("/api/gift", {
+        method: "POST", headers: {"content-type": "application/json"},
+        body: JSON.stringify({op: "send", token: giftLink.split("/gift/").pop(), to: to.trim(),
+          recipient: s.name, sender: myName.trim()})
+      });
+      const d = await r.json();
+      setSent(r.ok ? `Klart. Länken är skickad till ${to.trim()}.` : (d.message || "Kunde inte skicka mejlet."));
+    } catch { setSent("Kunde inte skicka mejlet."); }
+    setSending(false);
+  };
 
   const set = <K extends keyof S>(k: K, v: S[K]) => setS(p => ({...p, [k]: v}));
   const step: Step = STEPS[qi];
@@ -144,19 +183,29 @@ export default function Create() {
         <section className="panel">
           <div className="fills">Efter köp · det här ser köparen</div>
           <h1>Klart. Nu är det {gen(s.name)} tur.</h1>
-          <p className="sub">Packet är förseglat och väntar. Skicka det när du vill.</p>
+          <p className="sub">Packet är förseglat och väntar. Skicka länken till {s.name}.</p>
           {img && <div className="mini"><img src={img.teaser} alt="" /></div>}
-          <div className="row">
-            <button className="btn big" type="button" onClick={async () => {
-              const url = `${location.origin}/gift/sample`;
-              try {
-                if (navigator.share) await navigator.share({title: "Ett pack till dig", text: `Ett pack till ${s.name}.`, url});
-                else { await navigator.clipboard.writeText(url); alert("Länken är kopierad."); }
-              } catch { /* cancelled */ }
-            }}>Skicka packet</button>
-            <Link className="btn ghost" href="/gift/sample">Förhandsvisa mottagarens upplevelse</Link>
-          </div>
-          <p className="note">Exempellänk i demon: {typeof location === "undefined" ? "" : location.origin}/gift/sample</p>
+          {!giftLink ? (
+            <p className="note">Sparar kortet…</p>
+          ) : (
+            <>
+              <form className="field" onSubmit={send}>
+                <input type="text" placeholder="Ditt namn (frivilligt)" value={myName} onChange={e => setMyName(e.target.value)} />
+                <input type="email" placeholder="mottagarens@mejl.se" value={to} onChange={e => setTo(e.target.value)} />
+                <button className="btn big" type="submit" disabled={!to.trim() || sending}>
+                  {sending ? "Skickar…" : `Skicka till ${s.name}`}
+                </button>
+              </form>
+              {sent && <p className="note">{sent}</p>}
+              <div className="row">
+                <button className="btn ghost" type="button" onClick={async () => {
+                  try { await navigator.clipboard.writeText(giftLink); setSent("Länken är kopierad."); } catch { /* ignore */ }
+                }}>Kopiera länken</button>
+                <Link className="btn ghost" href={giftLink.replace(/^https?:\/\/[^/]+/, "")}>Se {gen(s.name)} pack</Link>
+              </div>
+              <p className="note">{giftLink}</p>
+            </>
+          )}
         </section>
       )}
     </main>
