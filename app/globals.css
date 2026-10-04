@@ -282,3 +282,11 @@ h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercas
   .flow{gap:12px;padding-top:12px}
   .panel{padding:16px}
 }
+
+/* The build checklist, as in the prototype's loading step. */
+.load .track i{animation:none;width:0;transition:width .9s ease}
+.blog{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-weight:700}
+.blog li{display:grid;grid-template-columns:1.4em minmax(0,1fr)}
+.blog li::before{content:"▸";color:var(--accent)}
+.blog li.done{color:var(--muted);font-weight:600}
+.blog li.done::before{content:"✓"}

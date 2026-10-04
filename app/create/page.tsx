@@ -28,6 +28,12 @@ const EMPTY: S = {name: "", rel: "", photo: "", fire: null, pairs: [null, null, 
 const STEPS = ["name", "rel", "photo", "fire", "pairs", "power", "quote", "email"] as const;
 type Step = (typeof STEPS)[number];
 
+/** The build checklist, as in the prototype's loading step. */
+const LOAD_STEPS = [
+  "Gjuter ramen…", "Häller i färgen…", "Präglar namnet…", "Framkallar bilden…",
+  "Skriver special power…", "Laddar attackerna…", "Räknar ut level…", "Lägger på holo-folie…", "Förseglar packet…"
+];
+
 const gen = (n: string) => (!n || /[sxz]$/i.test(n) ? n : n + "s");
 const kr = (n: number) => `${n} kr`;
 
@@ -40,6 +46,7 @@ export default function Create() {
   const [settled, setSettled] = useState(false);
   const [err, setErr] = useState("");
   const [status, setStatus] = useState("");
+  const [lv, setLv] = useState(0);
   const [started, setStarted] = useState(false);
   const [giftLink, setGiftLink] = useState("");
   const [to, setTo] = useState("");
@@ -87,7 +94,9 @@ export default function Create() {
   const who = s.name.trim() || "personen";
 
   const generate = useCallback(async (state: S) => {
-    setErr(""); setPhase("load"); setStatus("Skickar dina svar…");
+    setErr(""); setPhase("load"); setStatus("Skickar dina svar…"); setLv(0);
+    // The checklist advances while we wait, but the last row is only ticked when the image is in.
+    const tick = setInterval(() => setLv(n => Math.min(LOAD_STEPS.length - 1, n + 1)), 1500);
     const answers = {
       name: state.name.trim(),
       relationship: relation(state.rel)?.template ?? "van",
@@ -111,6 +120,8 @@ export default function Create() {
       setPhase("pack");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Något gick fel");
+    } finally {
+      clearInterval(tick);
     }
   }, []);
 
@@ -130,7 +141,7 @@ export default function Create() {
     fire: s.fire, attack2: s.pairs[0] ? {name: s.pairs[0].name, desc: s.pairs[0].desc ?? ""} : null,
     weakness: s.pairs[1]?.name ?? "", resistance: s.pairs[2]?.name ?? "", power: s.power, active: []
   };
-  const showCard = phase === "quiz";
+  const showCard = phase === "quiz" || phase === "load";
 
   return (
     <main className="flow">
@@ -165,8 +176,15 @@ export default function Create() {
               </div>
             </>
           ) : (
-            <div className="load"><div className="track"><i /></div><p className="sub">{status}</p>
-              <p className="note">Kortet ritas nu. Vi visar bara det som faktiskt är klart.</p></div>
+            <div className="load">
+              <div className="track"><i style={{width: `${Math.round(((lv + 1) / LOAD_STEPS.length) * 100)}%`}} /></div>
+              <ul className="blog">
+                {LOAD_STEPS.map((t, i) => (
+                  <li key={t} className={i < lv ? "done" : i === lv ? "now" : ""}>{t}</li>
+                ))}
+              </ul>
+              <p className="note">Kortet ritas nu. Låst text visas bara som streck, så den går inte att skärmdumpa.</p>
+            </div>
           )}
         </section>
       )}
