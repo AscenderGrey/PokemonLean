@@ -195,7 +195,7 @@ export default function Create() {
         <section className="reveal">
           <Unboxing key="reveal" mode="teaser" image={img.teaser} name={who}
             sub="Jag har gjort en grej till dig." cta="Tryck för att öppna." onSettled={() => setSettled(true)} />
-          {settled && <Paywall s={s} set={set} who={who} started={started} onStart={() => setStarted(true)} onPaid={() => setPhase("mine")} />}
+          {settled && <Paywall s={s} set={set} who={who} started={started} onStart={() => setStarted(true)} onPaid={() => setPhase("mine")} teaser={img.teaser} />}
         </section>
       )}
 
@@ -233,13 +233,22 @@ export default function Create() {
 }
 
 /** The paywall: teaser copy, what you get, the pack offers, then embedded Stripe Checkout. */
-function Paywall({s, set, who, started, onStart, onPaid}: {
+function Paywall({s, set, who, started, onStart, onPaid, teaser}: {
   s: S; set: <K extends keyof S>(k: K, v: S[K]) => void; who: string;
-  started: boolean; onStart: () => void; onPaid: () => void;
+  started: boolean; onStart: () => void; onPaid: () => void; teaser?: string;
 }) {
   const price = s.offer === 5 ? FAMILY_PRICE : PRICE;
+  const LOCKED = ["Hela bilden", "Special power", "Attack 2", "Weakness", "Resistance", "Strength"];
   return (
-    <div className="paywall">
+    <div className="stage">
+      <div className="cardcol">
+        <div className="lockedwrap">
+          {teaser && <img className="teaserimg" src={teaser} alt="" />}
+          <div className="locked"><b>Resten av kortet är låst</b><span>Lås upp för att se allt.</span></div>
+        </div>
+        <ul className="locklist">{LOCKED.map(t => <li key={t}>{t}</li>)}</ul>
+      </div>
+      <section className="panel paywall">
       <span className="rar">Sällsynthet: Ultra Rare</span>
       <h1>Lås upp {gen(s.name)} kort</h1>
       <p className="sub">Det du ser är bara toppen av kortet. Resten ligger kvar i packet.</p>
@@ -287,6 +296,7 @@ function Paywall({s, set, who, started, onStart, onPaid}: {
       <div className="row">
         <button className="btn ghost" type="button" onClick={onPaid}>Visa efter köp: köparen (demo)</button>
       </div>
+      </section>
     </div>
   );
 }

@@ -290,3 +290,20 @@ h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercas
 .blog li::before{content:"▸";color:var(--accent)}
 .blog li.done{color:var(--muted);font-weight:600}
 .blog li.done::before{content:"✓"}
+
+/* T2: the prototype's one-view paywall — teaser card left, benefits + payment right. */
+.lockedwrap{position:relative;border-radius:14px;overflow:hidden}
+.lockedwrap .teaserimg{display:block;width:100%;height:auto}
+.locked{position:absolute;left:0;right:0;bottom:0;padding:10px 12px;
+  background:linear-gradient(transparent,rgba(0,0,0,.88));display:flex;flex-direction:column;gap:2px}
+.locked b{font-size:14px}
+.locked span{font-size:12px;opacity:.75}
+.locklist{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:6px;font-size:13px;opacity:.8}
+.locklist li{display:grid;grid-template-columns:1.3em minmax(0,1fr)}
+.locklist li::before{content:"🔒"}
+/* On a phone the card must not push the Swish button below the fold. */
+@media(max-width:760px){
+  .stage .cardcol .lockedwrap{max-height:34vh}
+  .stage .cardcol .lockedwrap .teaserimg{height:34vh;width:auto;margin:0 auto}
+  .locklist{display:none}
+}
