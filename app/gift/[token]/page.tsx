@@ -81,15 +81,17 @@ export default function Gift() {
           <h1>Det finns bara en som du.</h1>
           {gift.sender && <p className="sub">Från {gift.sender}.</p>}
           <div className="row">
-            <button className="btn big" type="button" onClick={download}>Spara kortet</button>
-            <button className="btn ghost" type="button" onClick={() => { setSettled(false); setReplay(n => n + 1); }}>Öppna igen</button>
+            <button className="btn big" type="button"
+              onClick={() => share(`Titta vad ${gift.sender || "någon"} gjorde till mig 😂`, "Länken är kopierad — skicka den vidare.")}>
+              Dela kortet
+            </button>
           </div>
           <div className="row">
-            <button className="btn ghost" type="button" onClick={() => share(`Titta vad ${gift.sender || "någon"} gjorde till mig 😂`, "Länken är kopierad.")}>Dela</button>
-            <button className="btn ghost" type="button" onClick={() => share("No you didnt hahah", "Svaret är kopierat — skicka det till " + (gift.sender || "din vän") + ".")}>Svara “No you didnt hahah”</button>
+            <button className="btn" type="button" onClick={download}>Spara kortet</button>
+            <button className="btn ghost" type="button" onClick={() => { setSettled(false); setReplay(n => n + 1); }}>Öppna igen</button>
+            <Link className="btn ghost" href="/create">Gör ett eget kort</Link>
           </div>
           {note && <p className="note">{note}</p>}
-          <p className="quiet"><Link href="/create">Gör ett kort till någon du känner</Link></p>
         </div>
       )}
     </main>
