@@ -151,42 +151,44 @@ export default function Create() {
         {phase === "mine" && <button className="back" type="button" onClick={() => { setS(EMPTY); setQi(0); setPairI(0); setImg(null); setPhase("quiz"); }}>Börja om</button>}
       </header>
 
-      {phase === "quiz" && (
+      {(phase === "quiz" || phase === "load") && (
         <div className="stage">
           <div className="cardcol">{showCard && <CardPreview s={card} />}</div>
           <section className="panel">
-            <div className="prog">
-              <div className="segs">{[0, 1, 2, 3, 4, 5, 6, 7].map(i => <i key={i} className={i <= qi ? "on" : ""} />)}</div>
-              <span className="n">{qi + 1} av 8</span>
-            </div>
-            <QuizStep s={s} set={set} step={step} pairI={pairI} advance={advance} pick={pick} nm={nm} />
+            {phase === "quiz" ? (
+              <>
+                <div className="prog">
+                  <div className="segs">{[0, 1, 2, 3, 4, 5, 6, 7].map(i => <i key={i} className={i <= qi ? "on" : ""} />)}</div>
+                  <span className="n">{qi + 1} av 8</span>
+                </div>
+                <QuizStep s={s} set={set} step={step} pairI={pairI} advance={advance} pick={pick} nm={nm} />
+              </>
+            ) : (
+              <>
+                <h1>{gen(s.name)} kort byggs</h1>
+                {err ? (
+                  <>
+                    <p className="sub">Kortet kunde inte skapas: {err}</p>
+                    <div className="row">
+                      <button className="btn" type="button" onClick={() => generate(s)}>Försök igen</button>
+                      <button className="btn ghost" type="button" onClick={() => { setPhase("quiz"); setQi(0); }}>Tillbaka till frågorna</button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="load">
+                    <div className="track"><i style={{width: `${Math.round(((lv + 1) / LOAD_STEPS.length) * 100)}%`}} /></div>
+                    <ul className="blog">
+                      {LOAD_STEPS.map((t, i) => (
+                        <li key={t} className={i < lv ? "done" : i === lv ? "now" : ""}>{t}</li>
+                      ))}
+                    </ul>
+                    <p className="note">Kortet ritas nu. Låst text visas bara som streck, så den går inte att skärmdumpa.</p>
+                  </div>
+                )}
+              </>
+            )}
           </section>
         </div>
-      )}
-
-      {phase === "load" && (
-        <section className="panel">
-          <h1>{gen(s.name)} kort byggs</h1>
-          {err ? (
-            <>
-              <p className="sub">Kortet kunde inte skapas: {err}</p>
-              <div className="row">
-                <button className="btn" type="button" onClick={() => generate(s)}>Försök igen</button>
-                <button className="btn ghost" type="button" onClick={() => { setPhase("quiz"); setQi(0); }}>Tillbaka till frågorna</button>
-              </div>
-            </>
-          ) : (
-            <div className="load">
-              <div className="track"><i style={{width: `${Math.round(((lv + 1) / LOAD_STEPS.length) * 100)}%`}} /></div>
-              <ul className="blog">
-                {LOAD_STEPS.map((t, i) => (
-                  <li key={t} className={i < lv ? "done" : i === lv ? "now" : ""}>{t}</li>
-                ))}
-              </ul>
-              <p className="note">Kortet ritas nu. Låst text visas bara som streck, så den går inte att skärmdumpa.</p>
-            </div>
-          )}
-        </section>
       )}
 
       {phase === "pack" && img && (
