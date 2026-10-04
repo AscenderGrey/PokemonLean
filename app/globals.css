@@ -307,3 +307,24 @@ h2{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercas
   .stage .cardcol .lockedwrap .teaserimg{height:34vh;width:auto;margin:0 auto}
   .locklist{display:none}
 }
+
+/* T2 mobile: the Swish button must be reachable without scrolling.
+   Reorder the panel (offers + payment above the chat and the benefit tiles) and pin the
+   pay button to the bottom of the viewport, then shrink the teaser so it cannot dominate. */
+@media(max-width:760px){
+  .paywall{display:flex;flex-direction:column}
+  .paywall>.rar{order:1}
+  .paywall>h1{order:2;font-size:26px}
+  .paywall>.sub{order:3}
+  .paywall>.sect:nth-of-type(3){order:4}
+  .paywall>.total{order:5}
+  .paywall>.btn.big{order:6;position:sticky;bottom:10px;z-index:5;box-shadow:0 8px 28px rgba(0,0,0,.55)}
+  .paywall>.sect:nth-of-type(1){order:7}
+  .paywall>.sect:nth-of-type(2){order:8}
+  .paywall>.note{order:9}
+  .paywall>.row{order:10}
+  .stage .cardcol .lockedwrap{max-height:22vh}
+  .stage .cardcol .lockedwrap .teaserimg{height:22vh}
+  .paywall .gets .get span.d{display:none}
+  .offers2{gap:8px}
+}
