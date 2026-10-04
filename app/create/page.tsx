@@ -356,9 +356,22 @@ function QuizStep({s, set, step, pairI, advance, pick, nm}: {
       <p className="sub">Bilden hamnar i holo-ramen. Frivilligt — du kan lägga till den senare.</p>
       <div className="upload"><input type="file" accept="image/*" onChange={e => {
         const f = e.target.files?.[0]; if (!f) return;
-        const rd = new FileReader();
-        rd.onload = () => { set("photo", String(rd.result)); pick(); };
-        rd.readAsDataURL(f);
+        const url = URL.createObjectURL(f);
+        const img = document.createElement('img');
+        img.onload = () => {
+          // Standard JS image read (the prototype's FileReader is Godot-only and silently fails in a browser).
+          // One re-encode pass: keeps the POST under Vercel's body cap and sends a uniform JPEG data URL.
+          const max = Math.max(img.naturalWidth, img.naturalHeight);
+          const sc = Math.min(1, 1408 / max);
+          const c = document.createElement('canvas');
+          c.width = Math.round(img.naturalWidth * sc);
+          c.height = Math.round(img.naturalHeight * sc);
+          const g = c.getContext('2d');
+          if (g) g.drawImage(img, 0, 0, c.width, c.height);
+          set("photo", c.toDataURL("image/jpeg", 0.85));
+          pick();
+        };
+        img.src = url;
       }} /></div>
       <div className="row"><button className="btn ghost" type="button" onClick={advance}>Hoppa över så länge</button></div>
     </>
